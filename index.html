@@ -1,49 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Voice Bot</title>
+  <title>Nikitha's AI Voice Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    #chat {
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 600px;
+      margin: 20px auto;
+      min-height: 150px;
+      text-align: left;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin-bottom: 10px;
+    }
+
+    .user {
+      color: #ffd369;
+    }
+
+    .bot {
+      color: #00ffcc;
+    }
+
+    button {
+      background: white;
+      color: #764ba2;
+      border: none;
+      padding: 12px 25px;
+      font-size: 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #f0f0f0;
+      transform: scale(1.05);
+    }
+  </style>
 </head>
 <body>
 
-<h2>Simple Voice Bot</h2>
-<button onclick="startListening()">🎤 Ask Me</button>
-<p id="output"></p>
+  <h1>🎙️ Nikitha's AI Voice Assistant</h1>
 
-<script>
-  const answers = {
-    story: "I’m someone who enjoys building things from scratch and learning by doing...",
-    superpower: "My superpower is adaptability...",
-    grow: "The top three areas I want to grow in are communication, leadership, and technical depth.",
-    misconception: "People sometimes think I’m quiet, but I’m actually very proactive.",
-    limits: "I push my limits by taking on challenges that are slightly beyond my comfort zone."
-  };
+  <div id="chat"></div>
 
-  function startListening() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.start();
+  <button onclick="startListening()">🎤 Ask Me</button>
 
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript.toLowerCase();
-      let response = "That’s a great question. Let me think.";
+  <script>
+    const chatDiv = document.getElementById("chat");
 
-      if (text.includes("life")) response = answers.story;
-      else if (text.includes("superpower")) response = answers.superpower;
-      else if (text.includes("grow")) response = answers.grow;
-      else if (text.includes("misconception")) response = answers.misconception;
-      else if (text.includes("limit")) response = answers.limits;
+    function addMessage(text, className) {
+      const div = document.createElement("div");
+      div.className = "message " + className;
+      div.innerText = text;
+      chatDiv.appendChild(div);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
 
-      document.getElementById("output").innerText = response;
-      speak(response);
-    };
-  }
+    function speak(text) {
+      const speech = new SpeechSynthesisUtterance(text);
+      speechSynthesis.speak(speech);
+    }
 
-  function speak(text) {
-    const msg = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(msg);
-  }
-</script>
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+      recognition.start();
+
+      recognition.onresult = async function(event) {
+        const userText = event.results[0][0].transcript;
+        addMessage("You: " + userText, "user");
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userText })
+        });
+
+        const data = await response.json();
+        addMessage("AI: " + data.reply, "bot");
+        speak(data.reply);
+      };
+    }
+  </script>
 
 </body>
 </html>
